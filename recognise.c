@@ -1695,8 +1695,8 @@ void kmean(tu *a, motframe *b)
 		}
 		printf("\n");
 	}
-*/	printf("\n-------------------------\n");
-	free(kc);
+	printf("\n-------------------------\n");
+*/	free(kc);
 	free(c);
 	free(sub);
 }
@@ -1767,6 +1767,102 @@ void alpha(int *y,hmm *A,hmm *B,double *Pi_cb,double *prob)
 
 void main ()
 {
-	
+        int 		i,j,k,t,w,T,min;
+        double 		spa[W+1];
+        double 		dist[Kmax+1];
+        int 		array_y[W+1][frame+1],y[frame+1];
+        FILE 		*file;
+        char 		*buf=(char *)calloc(Fs*4+44,sizeof(char));
+        double 		*s=(double *)calloc(Fs*4,sizeof(double));
+        motframe 	*a=(motframe *)calloc(frame+1,sizeof(motframe));
+        double 		*prob=(double *)calloc(1,sizeof(double));
+        int 		*res=(int *)calloc(1,sizeof(int));
+        double 		probi[W+1];
 
+        printf("Moi doc tu muon nhan dang\n");
+        system ("arecord -d 2 -f S16_LE -t wav test.wav");
+        file = fopen("test.wav","r");
+        fread (buf , sizeof(char), 32044, file);
+        for (i=0; i<32044; i++)
+        {
+            s[i]=buf[i+44];
+            //	printf("%.0f ",S[i]);
+        }
+        fflush(file);
+        fclose (file);
+        T=MFCC(s,a);
+        printf("t=%d\n",T);
+        for (i=0; i<(T+1)*L/2; i++)
+        {
+            buf[i]=s[i];
+            //printf("%.0f ",S[i]);
+        }
+        file = fopen("test-test","w");
+        fwrite (buf , sizeof(char),(T+1)*L/2 , file);
+        fflush(file);
+        fclose (file);
+        printf("tu sau khi cat nhieu \n");
+        system("aplay -f S16_LE -t raw test-test");
+
+    	for(w=1;w<=W;w++)
+    {
+            spa[w] = 0;
+            for (t=1;t<=T;t++)
+            {
+                array_y[w][t]=1;
+                for(k=1;k<=Kmax;k++) // distance betwenall feature vector
+                {
+                        dist[k]=0;
+                        for(j=1;j<=mfccc;j++)
+                        {
+                            dist[k]=dist[k]+(a[t][j]-cb[w][k][j])*(a[t][j]-cb[w][k][j]);
+                        }
+                        if (dist[k]<dist[array_y[w][t]])
+                        {
+                            array_y[w][t]=k;
+                        }
+                }
+                spa[w]=spa[w] + dist[array_y[w][t]];
+            }
+    }
+    min=1;
+    for(w=2;w<=W;w++)
+    {
+            if(spa[w]<spa[min])
+            {
+                min=w;
+            }
+}
+
+
+for(t=1;t<=T;t++)
+    {
+        y[t] = array_y[min][t];
+    }
+
+//Estimate log-likelihood for each model (W)
+    for(w=1;w<=W;w++)
+    {
+        alpha(y,A[w],B[w],Pi_cb[w],prob);
+        probi[w]=prob[0];
+    }
+    
+   
+   
+// recognized index-word
+    res[0]=1;
+    for(w=1;w<=W;w++)
+    {
+        if (probi[w]>probi[res[0]])
+           res[0]=w;
+    }
+    printf("\nKq nhan dang bang VQ: %d\n",min);
+    printf("\nKq nhan dang bang HMM: %d\n",res[0]);
+    
+  //   
+
+
+free(a);
+free(buf);
+free(s);
 }
