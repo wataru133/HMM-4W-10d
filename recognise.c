@@ -1704,24 +1704,28 @@ void kmean(tu *a, motframe *b)
 void alpha(int *y,hmm *A,hmm *B,double *Pi_cb,double *prob)
 {
 	hmm *alp=(hmm *)calloc(frame+1,sizeof(hmm));
-	hmm *al=(hmm *)calloc(frame+1,sizeof(hmm));
+//	hmm *al=(hmm *)calloc(frame+1,sizeof(hmm));
 	double *scale=(double *)calloc(frame+1,sizeof(double));
 	int i,t,k,j,T;
+
 	scale[1]=0;
+	T=y[0];
+//	al pro thuong
+//	alp pro scale
+
 	for (i=1;i<=N;i++)
 	{
 		alp[1][i] = Pi_cb[i] * B[y[1]][i];
-		printf("pi:%f b:%f alp:%f \n", Pi_cb[i],B[y[1]][i],alp[1][i]);
+//		printf("pi:%f b:%f alp:%f \n", Pi_cb[i],B[y[1]][i],alp[1][i]);
 		scale[1]+=alp[1][i];
-		al[1][i]=Pi_cb[i] * B[y[1]][i];
+//		al[1][i]=Pi_cb[i] * B[y[1]][i];
 	}
-	printf("scale[1]: %f\n",scale[1]);
+//	printf("scale[1]: %f\n",scale[1]);
 	for (i=1;i<=N;i++)
         {
                 alp[1][i]=alp[1][i]/scale[1];
-		printf("alp[1][%d]=%f \n",i,alp[1][i]);
+//		printf("alp[1][%d]=%f \n",i,alp[1][i]);
 	}
-	T=y[0];
 	for (t=2;t<=T;t++)
 	{
 		scale[t]=0;
@@ -1731,138 +1735,152 @@ void alpha(int *y,hmm *A,hmm *B,double *Pi_cb,double *prob)
 			for  (i=1;i<=N;i++)
 			{
 				alp[t][j]+=alp[t-1][i]*A[i][j];
-				printf("alp[t:%d][j:%d]=%f;alp[t-1][i:%d]=%f;A[i][j]=%f\n",t,j,alp[t][j],i,alp[t-1][i],A[i][j]);
-				al[t][j]+=al[t-1][i]*A[i][j];
+//				printf("alp[t:%d][j:%d]=%f;alp[t-1][i:%d]=%f;A[i][j]=%f\n",t,j,alp[t][j],i,alp[t-1][i],A[i][j]);
+//				al[t][j]+=al[t-1][i]*A[i][j];
 			}
-			printf("%d \n",y[t]);
+//			printf("%d \n",y[t]);
 			alp[t][j]*=B[y[t]][j];
-			al[t][j]*=B[y[t]][j];
-			printf("B[%d][%d]:%f alp[%d][%d]=%f\n",y[t],j,B[y[t]][j],t,j,alp[t][j]);
+//			al[t][j]*=B[y[t]][j];
+//			printf("B[%d][%d]:%f alp[%d][%d]=%f\n",y[t],j,B[y[t]][j],t,j,alp[t][j]);
 			scale[t]+=alp[t][j];
 		}
-		printf("scale[%d]=%f\n",t,scale[t]);
+//		printf("scale[%d]=%f\n",t,scale[t]);
 		for (j=1;j<=N;j++)
                 {
-			printf("alp=%f;  scale=%f\n",alp[t][j],scale[t]);
+//			printf("alp=%f;  scale=%f\n",alp[t][j],scale[t]);
 			alp[t][j]=alp[t][j]/scale[t];
-			printf("alp[%d][%d] sau =%f\n",t,j,alp[t][j]);
+//			printf("alp[%d][%d] sau =%f\n",t,j,alp[t][j]);
 		}
 	}
-	prob[0]=0;
+/*	prob[0]=0;
 	for (i=1;i<=N;i++)
 	{
+		printf("al[T][i]=%f\n",al[T][i]);
 		prob[0]+=al[T][i];
 	}
 	printf("prob thuong=%f\n",log10(prob[0]));
-	prob[0]=0;
+*/	prob[0]=0;
 	for (t=1;t<=T;t++)
 	{
+//		printf("scale[t]=%f\n",scale[t]);
 		prob[0]+=log10(scale[t]);
 	}
-	printf("prob scale=%f\n",prob[0]);
+//	printf("prob scale=%f\n",prob[0]);
 	free(alp);
-	free(al);
+//	free(al);
 	free(scale);
 }
 
 void main ()
 {
         int 		i,j,k,t,w,T,min;
+	int             *res=(int *)calloc(1,sizeof(int));
+	int             array_y[W+1][frame+1],y[frame+1];
+
         double 		spa[W+1];
         double 		dist[Kmax+1];
-        int 		array_y[W+1][frame+1],y[frame+1];
-        FILE 		*file;
-        char 		*buf=(char *)calloc(Fs*4+44,sizeof(char));
-        double 		*s=(double *)calloc(Fs*4,sizeof(double));
-        motframe 	*a=(motframe *)calloc(frame+1,sizeof(motframe));
-        double 		*prob=(double *)calloc(1,sizeof(double));
-        int 		*res=(int *)calloc(1,sizeof(int));
-        double 		probi[W+1];
+	double          *s=(double *)calloc(Fs*4,sizeof(double));
+	double          *prob=(double *)calloc(1,sizeof(double));
+	double          probi[W+1];
 
-        printf("Moi doc tu muon nhan dang\n");
+        FILE 		*file;
+
+        char 		*buf=(char *)calloc(Fs*4+44,sizeof(char));
+	char            str[10];
+
+        motframe 	*a=(motframe *)calloc(frame+1,sizeof(motframe));
+
+
+
+        printf("-------Moi doc tu muon nhan dang-------\n");
         system ("arecord -d 2 -f S16_LE -t wav test.wav");
         file = fopen("test.wav","r");
         fread (buf , sizeof(char), 32044, file);
         for (i=0; i<32044; i++)
         {
-            s[i]=buf[i+44];
+        	s[i]=buf[i+44];
+//		s[0]=3;
+//		s[i]=50+2.3*s[i-1];
             //	printf("%.0f ",S[i]);
         }
-        fflush(file);
-        fclose (file);
+	fflush(file);
+     	fclose (file);
         T=MFCC(s,a);
-        printf("t=%d\n",T);
+        printf("\n-------So frame cua mau da doc la: %d-------\n",T);
         for (i=0; i<(T+1)*L/2; i++)
         {
-            buf[i]=s[i];
-            //printf("%.0f ",S[i]);
-        }
+            	buf[i]=s[i];
+    	}
         file = fopen("test-test","w");
         fwrite (buf , sizeof(char),(T+1)*L/2 , file);
         fflush(file);
         fclose (file);
-        printf("tu sau khi cat nhieu \n");
+        printf("\n-------Tu da doc sau khi cat nhieu------- \n");
         system("aplay -f S16_LE -t raw test-test");
 
+	printf("\n-------Ban muon nhan dang tu da doc? (y/n)-------\n");
+	scanf("%s",str);
+    
+        if (str[0]!='y')
+        {  
+		return;
+        }
+
     	for(w=1;w<=W;w++)
-    {
-            spa[w] = 0;
-            for (t=1;t<=T;t++)
-            {
-                array_y[w][t]=1;
-                for(k=1;k<=Kmax;k++) // distance betwenall feature vector
-                {
-                        dist[k]=0;
-                        for(j=1;j<=mfccc;j++)
-                        {
-                            dist[k]=dist[k]+(a[t][j]-cb[w][k][j])*(a[t][j]-cb[w][k][j]);
-                        }
-                        if (dist[k]<dist[array_y[w][t]])
-                        {
-                            array_y[w][t]=k;
-                        }
-                }
-                spa[w]=spa[w] + dist[array_y[w][t]];
-            }
-    }
-    min=1;
-    for(w=2;w<=W;w++)
-    {
-            if(spa[w]<spa[min])
-            {
-                min=w;
-            }
-}
+    	{
+     		spa[w] = 0;
+            	for (t=1;t<=T;t++)
+            	{
+                	array_y[w][t]=1;
+                	for(k=1;k<=Kmax;k++) // distance betwenall feature vector
+                	{
+                        	dist[k]=0;
+                        	for(j=1;j<=mfccc;j++)
+                        	{
+                            		dist[k]=dist[k]+(a[t][j]-cb[w][k][j])*(a[t][j]-cb[w][k][j]);
+                        	}
+                        	if (dist[k]<dist[array_y[w][t]])
+                        	{
+                            		array_y[w][t]=k;
+                        	}
+                	}
+                	spa[w]=spa[w] + dist[array_y[w][t]];
+            	}
+    	}
+    	min=1;
+    	for(w=2;w<=W;w++)
+    	{
+            	if(spa[w]<spa[min])
+            	{
+                	min=w;
+            	}
+	}	
+	y[0]=T;
+	for(t=1;t<=T;t++)
+    	{
+        	y[t] = array_y[min][t];
+    	}
+//		Estimate log-likelihood for each model (W)
+    	for(w=1;w<=W;w++)
+    	{
+        	alpha(y,A[w],B[w],Pi_cb[w],prob);
+        	probi[w]=prob[0];
+    	}
+// 		recognized index-word
+    	res[0]=1;
+    	for(w=1;w<=W;w++)
+    	{
+        	if (probi[w]>probi[res[0]])
+           	res[0]=w;
+    	}
+	printf("\n=======================================\n");
+    	printf("\n-------Kq nhan dang bang VQ:  %d-------\n",min);
+    	printf("\n-------Kq nhan dang bang HMM: %d-------\n",res[0]);
+   	printf("\n=======================================\n");
 
-
-for(t=1;t<=T;t++)
-    {
-        y[t] = array_y[min][t];
-    }
-
-//Estimate log-likelihood for each model (W)
-    for(w=1;w<=W;w++)
-    {
-        alpha(y,A[w],B[w],Pi_cb[w],prob);
-        probi[w]=prob[0];
-    }
-    
-   
-   
-// recognized index-word
-    res[0]=1;
-    for(w=1;w<=W;w++)
-    {
-        if (probi[w]>probi[res[0]])
-           res[0]=w;
-    }
-    printf("\nKq nhan dang bang VQ: %d\n",min);
-    printf("\nKq nhan dang bang HMM: %d\n",res[0]);
-    
-  //   
-
-
-free(a);
-free(buf);
-free(s);
+	free(a);
+	free(buf);
+	free(s);
+	free(prob);
+	free(res);
 }
